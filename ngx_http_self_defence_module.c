@@ -325,6 +325,7 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     return NGX_CONF_OK;
 }
 
+
 static void *
 ngx_http_self_defence_create_main_conf(ngx_conf_t *cf)
 {
@@ -343,6 +344,7 @@ ngx_http_self_defence_create_main_conf(ngx_conf_t *cf)
     return dmcf;
 }
 
+
 static void *
 ngx_http_self_defence_create_loc_conf(ngx_conf_t *cf)
 {
@@ -359,6 +361,7 @@ ngx_http_self_defence_create_loc_conf(ngx_conf_t *cf)
     return conf;
 }
 
+
 static char *
 ngx_http_self_defence_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
 {
@@ -368,9 +371,9 @@ ngx_http_self_defence_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_conf_merge_value(conf->defence_at, conf->defence_at, 0);
     ngx_conf_merge_ptr_value(conf->defence_actions, prev->defence_actions, 
                              NGX_CONF_UNSET_PTR);
-
     return NGX_CONF_OK;
 }
+
 
 static ngx_int_t
 ngx_http_self_defence_init(ngx_conf_t *cf)
@@ -389,6 +392,7 @@ ngx_http_self_defence_init(ngx_conf_t *cf)
 
     return NGX_OK;
 }
+
 
 #else
 
