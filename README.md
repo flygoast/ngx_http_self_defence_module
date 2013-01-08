@@ -66,7 +66,7 @@ Specify the value of shared memory. When matched with 'value' parameter,
 the request will be redirected to the URL specified by the 'action' parameter.
 `Nginx` will return 503 if no 'action' URL provided.
 A external script should periodically update the value in shared memory, then
-the `Nginx` can make it in self-defence in some status.
+the `Nginx` can make it in self-defence according the values.
 
 
 ## Limits
