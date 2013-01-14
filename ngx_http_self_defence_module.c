@@ -65,13 +65,15 @@ static char *ngx_http_defence_shm(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
 static char *ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd,
     void *conf);
-static char *ngx_http_defence_at_post(ngx_conf_t *cf, void *data, void *conf);
+static char *ngx_http_defence_at_post(ngx_conf_t *cf, void *post, void *data);
 static void *ngx_http_self_defence_create_main_conf(ngx_conf_t *cf);
 static void *ngx_http_self_defence_create_loc_conf(ngx_conf_t *cf);
 static char *ngx_http_self_defence_merge_loc_conf(ngx_conf_t *cf, void *parent,
     void *child);
 static ngx_int_t ngx_http_self_defence_init(ngx_conf_t *cf);
 
+static ngx_conf_post_handler_pt ngx_http_self_defence_at_post_p =
+    ngx_http_defence_at_post;
 
 static ngx_command_t ngx_http_self_defence_commands[] = {
 
@@ -87,7 +89,7 @@ static ngx_command_t ngx_http_self_defence_commands[] = {
       ngx_conf_set_num_slot,
       NGX_HTTP_LOC_CONF_OFFSET,
       offsetof(ngx_http_self_defence_loc_conf_t, defence_at),
-      ngx_http_defence_at_post },
+      &ngx_http_self_defence_at_post_p },
 
     { ngx_string("defence_action"),
       NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
@@ -240,7 +242,7 @@ ngx_http_defence_shm(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
 
 static char *
-ngx_http_defence_at_post(ngx_conf_t *cf, void *data, void *conf)
+ngx_http_defence_at_post(ngx_conf_t *cf, void *post, void *data)
 {
     ngx_http_self_defence_main_conf_t  *dmcf;
     ngx_int_t                          *np = data;
