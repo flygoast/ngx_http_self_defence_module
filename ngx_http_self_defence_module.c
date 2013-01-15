@@ -169,6 +169,10 @@ ngx_http_self_defence_handler(ngx_http_request_t *r)
 
     dlcf = ngx_http_get_module_loc_conf(r, ngx_http_self_defence_module);
 
+    if (dlcf->defence_actions == NGX_CONF_UNSET_PTR) {
+        return NGX_DECLINED;
+    }
+
     value = *(dmcf->shm_base + dlcf->defence_at);
 
     action = dlcf->defence_actions->elts;
