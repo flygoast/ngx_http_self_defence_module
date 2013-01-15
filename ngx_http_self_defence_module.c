@@ -163,6 +163,10 @@ ngx_http_self_defence_handler(ngx_http_request_t *r)
         return NGX_DECLINED;
     }
 
+    if (r->main->count != 1) {
+        return NGX_DECLINED;
+    }
+
     dlcf = ngx_http_get_module_loc_conf(r, ngx_http_self_defence_module);
 
     value = *(dmcf->shm_base + dlcf->defence_at);
@@ -370,7 +374,7 @@ ngx_http_self_defence_merge_loc_conf(ngx_conf_t *cf, void *parent, void *child)
     ngx_http_self_defence_loc_conf_t *prev = parent;
     ngx_http_self_defence_loc_conf_t *conf = child;
 
-    ngx_conf_merge_value(conf->defence_at, conf->defence_at, 0);
+    ngx_conf_merge_value(conf->defence_at, prev->defence_at, 0);
     ngx_conf_merge_ptr_value(conf->defence_actions, prev->defence_actions, 
                              NGX_CONF_UNSET_PTR);
     return NGX_CONF_OK;
