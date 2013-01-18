@@ -67,7 +67,8 @@ the request will be redirected to the URL specified by the 'action' parameter.
 `Nginx` will return 503 if no 'action' URL provided.
 
 If no 'ratio' specified, all request will trigger the action. Otherwise, only
-ratio percentage will trigger the action. 
+ratio percentage will trigger the action. The 'ratio' must be between 0 and 
+100. 
 
 A external script should periodically update the value in shared memory, then
 the `Nginx` can make it in self-defence according the values.
