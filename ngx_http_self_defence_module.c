@@ -305,7 +305,7 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     n = ngx_atoi(value[i].data, value[i].len);
 
     /* We just use a byte as a value. */
-    if (n == NGX_ERROR || n > 255) {
+    if (n == NGX_ERROR || n <= 0 || n > 255) {
         ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
                            "invalid value \"%i\", must between 0 and 255", n);
         return NGX_CONF_ERROR;
@@ -336,37 +336,38 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     i++;
 
     if (cf->args->nelts >= 3) {
-        if (value[i].data[0] != '@' && value[i].data[0] != '/') {
 
+        if (value[i].len < 2 || value[i].data[value[i].len - 1] != '%') {
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                           "invalid action value \"%V\"", &value[i]);
+                               "invalid defence_action param \"%V\", "
+                               "must such as \"90%%\"", &value[i]);
             return NGX_CONF_ERROR;
         }
 
-        action->action.data = value[i].data;
-        action->action.len = value[i].len;
+        action->ratio = ngx_atoi(value[i].data, value[i].len - 1);
+
+        if (action->ratio == NGX_ERROR || 
+            (action->ratio < 0 || action->ratio > 100))
+        {
+            ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                            "invalid value \"%i\", must between 0 and 100",
+                            action->ratio);
+            return NGX_CONF_ERROR;
+        }
 
         i++;
 
         if (cf->args->nelts == 4) {
 
-            if (value[i].len < 2 || value[i].data[value[i].len - 1] != '%') {
+            if (value[i].data[0] != '@' && value[i].data[0] != '/') {
+    
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                                   "invalid defence_action param \"%V\", "
-                                   "must such as \"90%%\"", &value[i]);
+                               "invalid action value \"%V\"", &value[i]);
                 return NGX_CONF_ERROR;
             }
-
-            action->ratio = ngx_atoi(value[i].data, value[i].len - 1);
-
-            if (action->ratio == NGX_ERROR || 
-                (action->ratio < 0 || action->ratio > 100))
-            {
-                ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                                "invalid value \"%i\", must between 0 and 255",
-                                action->ratio);
-                return NGX_CONF_ERROR;
-            }
+    
+            action->action.data = value[i].data;
+            action->action.len = value[i].len;
         }
     }
 
