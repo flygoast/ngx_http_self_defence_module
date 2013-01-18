@@ -331,7 +331,7 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
      */
     action->action.len = 0;
     action->action.data = NULL;
-    action->ration = 100;
+    action->ratio = 100;
 
     i++;
 
