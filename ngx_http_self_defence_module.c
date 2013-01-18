@@ -349,12 +349,21 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         i++;
 
         if (cf->args->nelts == 4) {
-            action->ratio = ngx_atoi(value[i].data, value[i].len);
+
+            if (value[i].len < 2 || value[i].data[value[i].len - 1] != '%') {
+                ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                                   "invalid defence_action param \"%V\", "
+                                   "must such as \"90%%\"", &value[i]);
+                return NGX_CONF_ERROR;
+            }
+
+            action->ratio = ngx_atoi(value[i].data, value[i].len - 1);
+
             if (action->ratio == NGX_ERROR || 
                 (action->ratio < 0 || action->ratio > 100))
             {
                 ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
-                                "invalid  value \"%i\", must between 0 and 255",
+                                "invalid value \"%i\", must between 0 and 255",
                                 action->ratio);
                 return NGX_CONF_ERROR;
             }

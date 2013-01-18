@@ -20,8 +20,8 @@ to the value and matched action in config.
             server_name  localhost;
     
             defence_at       1;
-            defence_action   1   @internal  100;
-            defence_action   2   /defence   20;
+            defence_action   1   @internal  90%;
+            defence_action   2   /defence   80%;
     
             location @internal {
                 return 500;
@@ -58,7 +58,7 @@ Specify the offset in shared memory of the byte whose value the module will
 detect to trigger the action handler specified in ***defence_action***.
 
 
-* **syntax** : ***defence_action*** value [action] [ratio]
+* **syntax** : ***defence_action*** value [action] [ratio%]
 * **default**: --
 * **context**: http, server, location
 
