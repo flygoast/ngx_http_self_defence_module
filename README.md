@@ -20,8 +20,8 @@ to the value and matched action in config.
             server_name  localhost;
     
             defence_at       1;
-            defence_action   1   @internal;
-            defence_action   2   /defence;
+            defence_action   1   @internal  100;
+            defence_action   2   /defence   20;
     
             location @internal {
                 return 500;
@@ -58,13 +58,17 @@ Specify the offset in shared memory of the byte whose value the module will
 detect to trigger the action handler specified in ***defence_action***.
 
 
-* **syntax** : ***defence_action*** value [action]
+* **syntax** : ***defence_action*** value [action] [ratio]
 * **default**: --
 * **context**: http, server, location
 
 Specify the value of shared memory. When matched with 'value' parameter,
 the request will be redirected to the URL specified by the 'action' parameter.
 `Nginx` will return 503 if no 'action' URL provided.
+
+If no 'ratio' specified, all request will trigger the action. Otherwise, only
+ratio percentage will trigger the action. 
+
 A external script should periodically update the value in shared memory, then
 the `Nginx` can make it in self-defence according the values.
 

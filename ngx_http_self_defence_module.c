@@ -41,6 +41,7 @@
 typedef struct {
     ngx_int_t   value;
     ngx_str_t   action;
+    ngx_int_t   ratio;
 } ngx_http_self_defence_action_t;
 
 
@@ -92,7 +93,7 @@ static ngx_command_t ngx_http_self_defence_commands[] = {
       &ngx_http_self_defence_at_post_p },
 
     { ngx_string("defence_action"),
-      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE12,
+      NGX_HTTP_MAIN_CONF|NGX_HTTP_SRV_CONF|NGX_HTTP_LOC_CONF|NGX_CONF_TAKE123,
       ngx_http_defence_action,
       NGX_HTTP_LOC_CONF_OFFSET,
       0,
@@ -180,6 +181,17 @@ ngx_http_self_defence_handler(ngx_http_request_t *r)
     for (i = 0; i < dlcf->defence_actions->nelts; i++) {
 
         if (action[i].value == value) {
+
+            if (action->ratio == 0) {
+                continue;
+            }
+
+            if (action->ratio != 100) {
+                if (r->connection->number % 100 >= action->ratio) {
+                    continue;
+                }
+            }
+
             ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
                 "self_defence limited, shm pos: %i, value: %i, action: \"%V\"",
                  dlcf->defence_at, value, &action[i].action);
@@ -299,8 +311,6 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         return NGX_CONF_ERROR;
     }
     
-    i++;
-
     if (dlcf->defence_actions == NGX_CONF_UNSET_PTR) {
         dlcf->defence_actions = ngx_array_create(cf->pool, 4, 
                                         sizeof(ngx_http_self_defence_action_t));
@@ -316,7 +326,16 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
 
     action->value = n;
 
-    if (cf->args->nelts == 3) {
+    /*
+     * set defaute values
+     */
+    action->action.len = 0;
+    action->action.data = NULL;
+    action->ration = 100;
+
+    i++;
+
+    if (cf->args->nelts >= 3) {
         if (value[i].data[0] != '@' && value[i].data[0] != '/') {
 
             ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
@@ -327,9 +346,19 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
         action->action.data = value[i].data;
         action->action.len = value[i].len;
 
-    } else {
-        action->action.len = 0;
-        action->action.data = NULL;
+        i++;
+
+        if (cf->args->nelts == 4) {
+            action->ratio = ngx_atoi(value[i].data, value[i].len);
+            if (action->ratio == NGX_ERROR || 
+                (action->ratio < 0 || action->ratio > 100))
+            {
+                ngx_conf_log_error(NGX_LOG_EMERG, cf, 0,
+                                "invalid  value \"%i\", must between 0 and 255",
+                                action->ratio);
+                return NGX_CONF_ERROR;
+            }
+        }
     }
 
     return NGX_CONF_OK;
