@@ -31,6 +31,7 @@
 #include <ngx_core.h>
 #include <ngx_http.h>
 
+
 #if (NGX_HAVE_SYSVSHM)
 
 
@@ -59,6 +60,7 @@ typedef struct {
 } ngx_http_self_defence_loc_conf_t;
 
 
+static ngx_int_t ngx_http_self_defence_module_init(ngx_cycle_t *cycle);
 static ngx_int_t ngx_http_self_defence_do_redirect(ngx_http_request_t *r, 
     ngx_str_t *path);
 static ngx_int_t ngx_http_self_defence_handler(ngx_http_request_t *r);
@@ -75,6 +77,7 @@ static ngx_int_t ngx_http_self_defence_init(ngx_conf_t *cf);
 
 static ngx_conf_post_handler_pt ngx_http_self_defence_at_post_p =
     ngx_http_defence_at_post;
+
 
 static ngx_command_t ngx_http_self_defence_commands[] = {
 
@@ -102,6 +105,7 @@ static ngx_command_t ngx_http_self_defence_commands[] = {
     ngx_null_command
 };
 
+
 static ngx_http_module_t ngx_http_self_defence_module_ctx = {
     NULL,                                   /* preconfiguration */
     ngx_http_self_defence_init,             /* postconfiguration */
@@ -116,13 +120,14 @@ static ngx_http_module_t ngx_http_self_defence_module_ctx = {
     ngx_http_self_defence_merge_loc_conf    /* merge location configuration */
 };
 
+
 ngx_module_t  ngx_http_self_defence_module = {
     NGX_MODULE_V1,
     &ngx_http_self_defence_module_ctx,      /* module context */
     ngx_http_self_defence_commands,         /* module directives */
     NGX_HTTP_MODULE,                        /* module type */
     NULL,                                   /* init master */
-    NULL,                                   /* init module */
+    ngx_http_self_defence_module_init,      /* init module */
     NULL,                                   /* init process */
     NULL,                                   /* init thread */
     NULL,                                   /* exit thread */
@@ -130,6 +135,7 @@ ngx_module_t  ngx_http_self_defence_module = {
     NULL,                                   /* exit master */
     NGX_MODULE_V1_PADDING
 };
+
 
 static ngx_int_t
 ngx_http_self_defence_do_redirect(ngx_http_request_t *r, ngx_str_t *path)
@@ -148,6 +154,7 @@ ngx_http_self_defence_do_redirect(ngx_http_request_t *r, ngx_str_t *path)
 
     return NGX_DONE;
 }
+
 
 static ngx_int_t
 ngx_http_self_defence_handler(ngx_http_request_t *r)
@@ -187,14 +194,18 @@ ngx_http_self_defence_handler(ngx_http_request_t *r)
             }
 
             if (action->ratio != 100) {
-                if (r->connection->number % 100 >= action->ratio) {
+                if ((ngx_int_t)(r->connection->number % 100) >= action->ratio) {
                     continue;
                 }
             }
 
             ngx_log_error(NGX_LOG_ALERT, r->connection->log, 0,
-                "self_defence limited, shm pos: %i, value: %i, action: \"%V\"",
-                 dlcf->defence_at, value, &action[i].action);
+                          "self_defence limited, shm pos: %i, "
+                          "value: %i, action: \"%V\"",
+                          dlcf->defence_at, 
+                          value, 
+                          &action[i].action);
+
             return ngx_http_self_defence_do_redirect(r, &action[i].action);
         }
     }
@@ -287,7 +298,7 @@ ngx_http_defence_action(ngx_conf_t *cf, ngx_command_t *cmd, void *conf)
     ngx_http_self_defence_loc_conf_t    *dlcf;
     ngx_http_self_defence_action_t      *action;
     ngx_str_t                           *value;
-    ngx_uint_t                           i, j;
+    ngx_uint_t                           i;
     ngx_int_t                            n;
 
     dmcf = ngx_http_conf_get_module_main_conf(cf, ngx_http_self_defence_module);
@@ -438,6 +449,33 @@ ngx_http_self_defence_init(ngx_conf_t *cf)
     }
 
     *h = ngx_http_self_defence_handler;
+
+    return NGX_OK;
+}
+
+
+static ngx_int_t
+ngx_http_self_defence_module_init(ngx_cycle_t *cycle)
+{
+    ngx_http_self_defence_main_conf_t  *dmcf; 
+
+    if (cycle->old_cycle == NULL || cycle->old_cycle->conf_ctx == NULL) {
+        return NGX_OK;
+    }
+
+    /* for reconfiguration */
+    dmcf = ngx_http_cycle_get_module_main_conf(cycle->old_cycle,
+                                               ngx_http_self_defence_module);
+
+    if (dmcf) {
+        if (dmcf->shm_base != (u_char *)-1) {
+            if (shmdt(dmcf->shm_base) != 0) {
+                ngx_log_error(NGX_LOG_ALERT, cycle->log, ngx_errno, 
+                              "shmdt() failed");
+                return NGX_ERROR;
+            }
+        }
+    }
 
     return NGX_OK;
 }
